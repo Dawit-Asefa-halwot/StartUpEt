@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -101,12 +102,14 @@ class StartupetApp extends StatelessWidget {
         title: 'StartupEt',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
+          textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
           colorScheme: ColorScheme.fromSeed(
             seedColor: AppColors.primary,
             primary: AppColors.primary,
+            secondary: AppColors.secondary,
           ),
           primaryColor: AppColors.primary,
-          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+          scaffoldBackgroundColor: AppColors.background,
           inputDecorationTheme: const InputDecorationTheme(
             filled: true,
             fillColor: Colors.white,

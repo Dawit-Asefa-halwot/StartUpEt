@@ -1,6 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/app_colors.dart';
 import '../../../../presentation/screens/applications_screen.dart';
@@ -53,39 +54,49 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  Widget _buildTabItem(
+  Widget _buildGlassTabItem(
     int index,
-    IconData unselectedIcon,
-    IconData selectedIcon,
+    IconData icon,
     String label,
   ) {
     final isSelected = _currentIndex == index;
-    return Tab(
-      height: 52,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity( 0.25)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _currentIndex = index;
+            _tabController.animateTo(index);
+          });
+        },
+        behavior: HitTestBehavior.opaque,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isSelected ? selectedIcon : unselectedIcon,
-              color: isSelected ? Colors.tealAccent : Colors.grey[400],
-              size: 20,
+              icon,
+              color: isSelected ? AppColors.primary : AppColors.mutedText,
+              size: 22,
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 6),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.white : Colors.grey[400],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? AppColors.primary : AppColors.mutedText,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Active Tab Orange Underline (16x3px)
+            Container(
+              width: 16,
+              height: 3,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.secondary : Colors.transparent,
+                borderRadius: BorderRadius.circular(1.5),
               ),
             ),
           ],
@@ -96,6 +107,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final user = state is AuthAuthenticated ? state.user : null;
@@ -117,57 +130,112 @@ class _HomeScreenState extends State<HomeScreen>
         ];
 
         return Scaffold(
-          body: BottomBar(
-            showIcon: false,
-            width: MediaQuery.of(context).size.width * 0.92,
-            borderRadius: BorderRadius.circular(30),
-            offset: 16,
-            barDecoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(30),
-            ),
-            body: (context, controller) => TabBarView(
-              controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: pages,
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: TabBar(
+          backgroundColor: AppColors.background,
+          body: Stack(
+            children: [
+              // Tab View Content
+              TabBarView(
                 controller: _tabController,
-                indicator: const BoxDecoration(),
-                indicatorColor: Colors.transparent,
-                indicatorWeight: 0,
-                dividerColor: Colors.transparent,
-                labelPadding: EdgeInsets.zero,
-                tabs: [
-                  _buildTabItem(
-                    0,
-                    Icons.dashboard_outlined,
-                    Icons.dashboard,
-                    'Dashboard',
-                  ),
-                  _buildTabItem(
-                    1,
-                    Icons.assignment_outlined,
-                    Icons.assignment,
-                    'Application',
-                  ),
-                  _buildTabItem(
-                    2,
-                    Icons.workspace_premium_outlined,
-                    Icons.workspace_premium,
-                    'Certifications',
-                  ),
-                  _buildTabItem(
-                    3,
-                    Icons.settings_outlined,
-                    Icons.settings,
-                    'Settings',
-                  ),
-                ],
+                physics: const NeverScrollableScrollPhysics(),
+                children: pages,
               ),
-            ),
+
+              // Soft blurred color glows behind the nav bar
+              Positioned(
+                left: 20,
+                bottom: bottomInset + 10,
+                child: Container(
+                  width: 130,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x6108737C), // Teal rgba(8,115,124,0.38)
+                        blurRadius: 36,
+                        spreadRadius: 18,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 20,
+                bottom: bottomInset + 10,
+                child: Container(
+                  width: 130,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x6BF7A03A), // Orange rgba(247,160,58,0.42)
+                        blurRadius: 36,
+                        spreadRadius: 18,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Floating Frosted Glass Bottom Navigation Bar
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: bottomInset + 14,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0x8CFFFFFF), // rgba(255,255,255,0.55)
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: const Color(0xBFFFFFFF), // rgba(255,255,255,0.75)
+                      width: 1,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x2E08737C), // rgba(8,115,124,0.18)
+                        blurRadius: 32,
+                        offset: Offset(0, 12),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            _buildGlassTabItem(
+                              0,
+                              Icons.grid_view_outlined,
+                              'Home',
+                            ),
+                            _buildGlassTabItem(
+                              1,
+                              Icons.description_outlined,
+                              'Applications',
+                            ),
+                            _buildGlassTabItem(
+                              2,
+                              Icons.workspace_premium_outlined,
+                              'Certificates',
+                            ),
+                            _buildGlassTabItem(
+                              3,
+                              Icons.settings_outlined,
+                              'Settings',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
