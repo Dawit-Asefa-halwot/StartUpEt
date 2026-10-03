@@ -24,15 +24,15 @@ class MetricCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withValues(alpha: 0.15), width: 1.2),
+        border: Border.all(color: color.withOpacity( 0.15), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.06),
+            color: color.withOpacity( 0.06),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            color: const Color(0xFF0F172A).withOpacity( 0.03),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -44,8 +44,8 @@ class MetricCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(18),
-          splashColor: color.withValues(alpha: 0.1),
-          highlightColor: color.withValues(alpha: 0.05),
+          splashColor: color.withOpacity( 0.1),
+          highlightColor: color.withOpacity( 0.05),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
@@ -60,15 +60,15 @@ class MetricCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            color.withValues(alpha: 0.18),
-                            color.withValues(alpha: 0.08),
+                            color.withOpacity( 0.18),
+                            color.withOpacity( 0.08),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: color.withValues(alpha: 0.2),
+                          color: color.withOpacity( 0.2),
                           width: 0.8,
                         ),
                       ),

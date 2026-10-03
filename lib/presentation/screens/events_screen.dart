@@ -155,7 +155,7 @@ class _EventsScreenState extends State<EventsScreen>
               gradient: LinearGradient(
                 colors: [
                   AppColors.primary,
-                  AppColors.primary.withValues(alpha: 0.8),
+                  AppColors.primary.withOpacity( 0.8),
                 ],
               ),
               borderRadius: const BorderRadius.vertical(

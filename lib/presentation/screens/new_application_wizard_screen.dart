@@ -442,7 +442,7 @@ class _NewApplicationWizardScreenState
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: Colors.black.withOpacity( 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, -4),
                       ),
@@ -511,7 +511,7 @@ class _NewApplicationWizardScreenState
           ),
           if (_isSubmitting)
             Container(
-              color: Colors.black.withValues(alpha: 0.45),
+              color: Colors.black.withOpacity( 0.45),
               child: Center(
                 child: Card(
                   elevation: 8,
@@ -784,7 +784,7 @@ class _NewApplicationWizardScreenState
 
         _buildLabel('Industry *'),
         DropdownButtonFormField<String>(
-          initialValue: _selectedIndustry,
+          value: _selectedIndustry,
           items: _industries
               .map((ind) => DropdownMenuItem(value: ind, child: Text(ind)))
               .toList(),
@@ -795,7 +795,7 @@ class _NewApplicationWizardScreenState
 
         _buildLabel('Business Stage *'),
         DropdownButtonFormField<String>(
-          initialValue: _selectedStage,
+          value: _selectedStage,
           items: _stages
               .map((stg) => DropdownMenuItem(value: stg, child: Text(stg)))
               .toList(),
@@ -1217,12 +1217,12 @@ class _NewApplicationWizardScreenState
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: hasFile
-            ? AppColors.primary.withValues(alpha: 0.04)
+            ? AppColors.primary.withOpacity( 0.04)
             : Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: hasFile
-              ? AppColors.primary.withValues(alpha: 0.5)
+              ? AppColors.primary.withOpacity( 0.5)
               : Colors.grey.shade300,
           width: hasFile ? 1.5 : 1.0,
         ),

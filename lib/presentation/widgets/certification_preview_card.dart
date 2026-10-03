@@ -49,7 +49,7 @@ class CertificationPreviewCard extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0A4D62).withValues(alpha: 0.35),
+                  color: const Color(0xFF0A4D62).withOpacity( 0.35),
                   blurRadius: 18,
                   offset: const Offset(0, 8),
                 ),
@@ -66,7 +66,7 @@ class CertificationPreviewCard extends StatelessWidget {
                     height: 110,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.05),
+                      color: Colors.white.withOpacity( 0.05),
                     ),
                   ),
                 ),
@@ -77,10 +77,10 @@ class CertificationPreviewCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
+                          color: Colors.white.withOpacity( 0.12),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.25),
+                            color: Colors.white.withOpacity( 0.25),
                             width: 1,
                           ),
                         ),
@@ -159,10 +159,10 @@ class CertificationPreviewCard extends StatelessWidget {
                               vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              color: Colors.white.withOpacity( 0.15),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.4),
+                                color: Colors.white.withOpacity( 0.4),
                                 width: 1,
                               ),
                             ),
@@ -191,12 +191,12 @@ class CertificationPreviewCard extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.2),
+              color: AppColors.primary.withOpacity( 0.2),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: AppColors.primary.withOpacity( 0.08),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -209,7 +209,7 @@ class CertificationPreviewCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
+                    color: AppColors.primary.withOpacity( 0.08),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(

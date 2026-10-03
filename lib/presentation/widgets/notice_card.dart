@@ -25,7 +25,7 @@ class NoticeCard extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            color: const Color(0xFF0F172A).withOpacity( 0.04),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -51,7 +51,7 @@ class NoticeCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.1),
+                          color: color.withOpacity( 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(icon, color: color, size: 20),
@@ -93,7 +93,7 @@ class NoticeCard extends StatelessWidget {
                                 vertical: 2.5,
                               ),
                               decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.08),
+                                color: color.withOpacity( 0.08),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(

@@ -254,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SizedBox(height: 16),
 
           DropdownButtonFormField<String>(
-            initialValue: _selectedRole,
+            value: _selectedRole,
             decoration: InputDecoration(
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.grey.shade300),

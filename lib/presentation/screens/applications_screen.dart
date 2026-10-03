@@ -293,7 +293,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
         border: Border.all(color: Colors.grey.shade200, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            color: const Color(0xFF0F172A).withOpacity( 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -333,7 +333,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                         gradient: LinearGradient(
                           colors: [
                             AppColors.primary,
-                            AppColors.primary.withValues(alpha: 0.8),
+                            AppColors.primary.withOpacity( 0.8),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -383,10 +383,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
+                        color: statusColor.withOpacity( 0.12),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: statusColor.withValues(alpha: 0.3),
+                          color: statusColor.withOpacity( 0.3),
                           width: 1,
                         ),
                       ),
@@ -523,7 +523,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                       side: isDraft
                           ? BorderSide.none
                           : BorderSide(
-                              color: AppColors.primary.withValues(alpha: 0.3),
+                              color: AppColors.primary.withOpacity( 0.3),
                             ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -606,7 +606,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.15),
+                      color: statusColor.withOpacity( 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

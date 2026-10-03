@@ -64,7 +64,7 @@ class StartupDashboardView extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: Colors.white.withOpacity( 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -113,7 +113,7 @@ class StartupDashboardView extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.tealAccent.withValues(alpha: 0.6),
+                        color: Colors.tealAccent.withOpacity( 0.6),
                         width: 1.5,
                       ),
                     ),
@@ -152,10 +152,10 @@ class StartupDashboardView extends StatelessWidget {
                             vertical: 2.5,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.teal.withValues(alpha: 0.25),
+                            color: Colors.teal.withOpacity( 0.25),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.tealAccent.withValues(alpha: 0.7),
+                              color: Colors.tealAccent.withOpacity( 0.7),
                               width: 0.8,
                             ),
                           ),
@@ -198,7 +198,7 @@ class StartupDashboardView extends StatelessWidget {
                 //     ),
                 //     boxShadow: [
                 //       BoxShadow(
-                //         color: const Color(0xFF0A4D62).withValues(alpha: 0.3),
+                //         color: const Color(0xFF0A4D62).withOpacity( 0.3),
                 //         blurRadius: 14,
                 //         offset: const Offset(0, 6),
                 //       ),
@@ -219,7 +219,7 @@ class StartupDashboardView extends StatelessWidget {
                 //                 Container(
                 //                   padding: const EdgeInsets.all(7),
                 //                   decoration: BoxDecoration(
-                //                     color: Colors.white.withValues(alpha: 0.15),
+                //                     color: Colors.white.withOpacity( 0.15),
                 //                     borderRadius: BorderRadius.circular(10),
                 //                   ),
                 //                   child: const Icon(
@@ -304,7 +304,7 @@ class StartupDashboardView extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                                color: const Color(0xFF0F172A).withOpacity( 0.04),
                                 blurRadius: 16,
                                 offset: const Offset(0, 4),
                               ),
@@ -315,7 +315,7 @@ class StartupDashboardView extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.08),
+                                  color: AppColors.primary.withOpacity( 0.08),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(

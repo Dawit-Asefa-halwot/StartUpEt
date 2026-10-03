@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen>
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.25)
+              ? AppColors.primary.withOpacity( 0.25)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
@@ -119,20 +119,14 @@ class _HomeScreenState extends State<HomeScreen>
         return Scaffold(
           body: BottomBar(
             showIcon: false,
-            layout: BottomBarLayout(
-              width: MediaQuery.of(context).size.width * 0.92,
+            width: MediaQuery.of(context).size.width * 0.92,
+            borderRadius: BorderRadius.circular(30),
+            offset: 16,
+            barDecoration: BoxDecoration(
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(30),
-              offset: 16,
-              alignment: Alignment.bottomCenter,
             ),
-            theme: BottomBarThemeData(
-              barDecoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: const [],
-              ),
-            ),
-            body: TabBarView(
+            body: (context, controller) => TabBarView(
               controller: _tabController,
               physics: const NeverScrollableScrollPhysics(),
               children: pages,

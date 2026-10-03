@@ -89,7 +89,7 @@ class _NotificationsBottomSheetState extends State<NotificationsBottomSheet> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.08),
+                          color: AppColors.primary.withOpacity( 0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
