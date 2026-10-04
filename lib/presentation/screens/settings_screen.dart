@@ -12,6 +12,7 @@ import '../../features/ecosystem/bloc/ecosystem_bloc.dart';
 import '../../features/ecosystem/bloc/ecosystem_event.dart' hide EcosystemEvent;
 import '../../features/ecosystem/bloc/ecosystem_state.dart';
 import '../widgets/notifications_bottom_sheet.dart';
+import '../widgets/user_avatar.dart';
 import 'edit_profile_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -140,34 +141,7 @@ class SettingsScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             // 64x64 Circle Avatar
-                            Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.16),
-                                shape: BoxShape.circle,
-                                image: user?.image != null &&
-                                        user!.image!.isNotEmpty
-                                    ? DecorationImage(
-                                        image: NetworkImage(user.image!),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
-                              child: (user?.image == null ||
-                                      user!.image!.isEmpty)
-                                  ? Center(
-                                      child: Text(
-                                        initial,
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    )
-                                  : null,
-                            ),
+                            UserAvatar(user: user, radius: 32),
                             const SizedBox(width: 16),
                             // Text Stack
                             Expanded(
