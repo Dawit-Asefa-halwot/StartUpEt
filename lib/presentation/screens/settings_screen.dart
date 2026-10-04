@@ -313,57 +313,46 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showLogoutConfirmationDialog(BuildContext context) {
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      barrierDismissible: true,
+      barrierLabel: 'Log out?',
+      barrierColor: const Color(0x8006282C), // rgba(6,40,44,0.5) dark teal scrim
+      transitionDuration: const Duration(milliseconds: 250),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return _LogoutConfirmationDialog(parentContext: context);
+      },
+      transitionBuilder:
+          (dialogContext, animation, secondaryAnimation, child) {
+        final curve = CurvedAnimation(
+          parent: animation,
+          curve: const Cubic(0.2, 0.8, 0.2, 1.0),
+        );
+        final isReducedMotion =
+            MediaQuery.of(dialogContext).accessibleNavigation;
+
+        if (isReducedMotion) {
+          return BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+            child: child,
+          );
+        }
+
+        return BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: 6 * animation.value,
+            sigmaY: 6 * animation.value,
           ),
-          title: Text(
-            'Logout Confirmation',
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          content: Text(
-            'Are you sure you want to log out of your StartupET account?',
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
+          child: FadeTransition(
+            opacity: animation,
+            child: Transform.translate(
+              offset: Offset(0, 8 * (1.0 - curve.value)),
+              child: Transform.scale(
+                scale: 0.95 + (0.05 * curve.value),
+                child: child,
               ),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE53E3E),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                context.read<AuthBloc>().add(const AuthLogout());
-              },
-              child: Text(
-                'Logout',
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+          ),
         );
       },
     );
@@ -812,6 +801,194 @@ class _EcosystemBuilderDialogState extends State<_EcosystemBuilderDialog> {
           },
         ),
       ],
+    );
+  }
+}
+
+class _LogoutConfirmationDialog extends StatefulWidget {
+  final BuildContext parentContext;
+
+  const _LogoutConfirmationDialog({required this.parentContext});
+
+  @override
+  State<_LogoutConfirmationDialog> createState() =>
+      _LogoutConfirmationDialogState();
+}
+
+class _LogoutConfirmationDialogState
+    extends State<_LogoutConfirmationDialog> {
+  bool _isLogoutPressed = false;
+  final FocusNode _cancelFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _cancelFocusNode.requestFocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _cancelFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onConfirmLogout() {
+    Navigator.pop(context);
+    widget.parentContext.read<AuthBloc>().add(const AuthLogout());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Log out?',
+      hint: 'Are you sure you want to log out of your StartupET account?',
+      container: true,
+      child: Center(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x73000000), // rgba(0,0,0,0.45)
+                      blurRadius: 70,
+                      offset: Offset(0, 30),
+                      spreadRadius: -20,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title: "Log out?"
+                    Text(
+                      'Log out?',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary, // #0D2E31
+                        letterSpacing: -0.48, // -0.02em
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Message
+                    Text(
+                      'Are you sure you want to log out of your StartupET account?',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textSecondary, // #5E7679
+                        height: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+
+                    // Buttons Row (12px gap, 52px height)
+                    Row(
+                      children: [
+                        // Cancel Button (flex 1)
+                        Expanded(
+                          flex: 10,
+                          child: SizedBox(
+                            height: 52,
+                            child: OutlinedButton(
+                              focusNode: _cancelFocusNode,
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.primary,
+                                side: const BorderSide(
+                                  color: Color(0x4D08737C), // rgba(8,115,124,0.3)
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(26),
+                                ),
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                'Cancel',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary, // #08737C
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Log out Button (flex 1.3 - flex 13)
+                        Expanded(
+                          flex: 13,
+                          child: AnimatedScale(
+                            scale: _isLogoutPressed ? 0.98 : 1.0,
+                            duration: const Duration(milliseconds: 100),
+                            child: Container(
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: _isLogoutPressed
+                                    ? const Color(0xFFB93636) // Pressed #B93636
+                                    : const Color(0xFFD14343), // #D14343
+                                borderRadius: BorderRadius.circular(26),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x7FD14343),
+                                    blurRadius: 22,
+                                    offset: Offset(0, 10),
+                                    spreadRadius: -10,
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(26),
+                                child: InkWell(
+                                  onTapDown: (_) =>
+                                      setState(() => _isLogoutPressed = true),
+                                  onTapUp: (_) =>
+                                      setState(() => _isLogoutPressed = false),
+                                  onTapCancel: () =>
+                                      setState(() => _isLogoutPressed = false),
+                                  onTap: _onConfirmLogout,
+                                  borderRadius: BorderRadius.circular(26),
+                                  child: Center(
+                                    child: Text(
+                                      'Log out',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
