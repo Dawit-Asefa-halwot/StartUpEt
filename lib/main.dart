@@ -2,7 +2,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'core/app_colors.dart';
 import 'features/application/bloc/application_bloc.dart';
@@ -21,13 +20,14 @@ import 'features/notification/bloc/notification_bloc.dart';
 import 'features/pitch/bloc/pitch_bloc.dart';
 import 'features/startup/bloc/startup_bloc.dart';
 import 'features/verification/bloc/verification_bloc.dart';
+import 'presentation/screens/splash_screen.dart';
 import 'injection_container.dart' as di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await di.initDependencies();
 
-  final storage = const FlutterSecureStorage();
+  const storage = FlutterSecureStorage();
   final apiKey = await storage.read(key: 'api_key');
   final hasToken = apiKey != null && apiKey.isNotEmpty;
 
@@ -163,17 +163,21 @@ class _AuthGateState extends State<AuthGate> {
             current is AuthInitial;
       },
       builder: (context, state) {
-        if (state is AuthAuthenticated) {
-          return const HomeScreen();
+        Widget child;
+        if (_isCheckingInitialAuth && (state is AuthLoading || state is AuthInitial)) {
+          child = const InAppLoadingSplashScreen(key: ValueKey('splash'));
+        } else if (state is AuthAuthenticated) {
+          child = const HomeScreen(key: ValueKey('home'));
+        } else {
+          child = const LoginScreen(key: ValueKey('login'));
         }
-        if (_isCheckingInitialAuth && state is AuthLoading) {
-          return const Scaffold(
-            body: Center(
-              child: SpinKitThreeBounce(color: AppColors.primary, size: 30),
-            ),
-          );
-        }
-        return const LoginScreen();
+
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          switchInCurve: Curves.easeIn,
+          switchOutCurve: Curves.easeOut,
+          child: child,
+        );
       },
     );
   }
