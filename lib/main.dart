@@ -136,12 +136,24 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
-  late bool _isCheckingInitialAuth;
+  bool _isCheckingInitialAuth = true;
 
   @override
   void initState() {
     super.initState();
-    _isCheckingInitialAuth = widget.hasStoredToken;
+    _startInitialSplashHandoff();
+  }
+
+  void _startInitialSplashHandoff() async {
+    if (!widget.hasStoredToken) {
+      // Allow the animated network splash screen to present its intro animation
+      await Future.delayed(const Duration(milliseconds: 1200));
+      if (mounted) {
+        setState(() {
+          _isCheckingInitialAuth = false;
+        });
+      }
+    }
   }
 
   @override
@@ -164,7 +176,7 @@ class _AuthGateState extends State<AuthGate> {
       },
       builder: (context, state) {
         Widget child;
-        if (_isCheckingInitialAuth && (state is AuthLoading || state is AuthInitial)) {
+        if (_isCheckingInitialAuth) {
           child = const InAppLoadingSplashScreen(key: ValueKey('splash'));
         } else if (state is AuthAuthenticated) {
           child = const HomeScreen(key: ValueKey('home'));
