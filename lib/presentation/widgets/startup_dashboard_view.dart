@@ -105,8 +105,13 @@ class LineIllustration extends StatelessWidget {
 /// Pressable Create Application Button with 0.98 scale animation and hover/press state
 class PressableCreateButton extends StatefulWidget {
   final VoidCallback onPressed;
+  final String label;
 
-  const PressableCreateButton({super.key, required this.onPressed});
+  const PressableCreateButton({
+    super.key,
+    required this.onPressed,
+    this.label = 'Create application',
+  });
 
   @override
   State<PressableCreateButton> createState() => _PressableCreateButtonState();
@@ -146,7 +151,7 @@ class _PressableCreateButtonState extends State<PressableCreateButton> {
             borderRadius: BorderRadius.circular(27),
             child: Center(
               child: Text(
-                'Create application',
+                widget.label,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

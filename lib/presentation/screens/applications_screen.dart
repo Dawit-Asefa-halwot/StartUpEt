@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/app_colors.dart';
 import '../../features/application/bloc/application_bloc.dart';
 import '../../features/application/bloc/application_event.dart';
 import '../../features/application/bloc/application_state.dart';
 import '../../models/application.dart';
+import '../widgets/notifications_bottom_sheet.dart';
+import '../widgets/startup_dashboard_view.dart';
 import 'new_application_wizard_screen.dart';
 
 class ApplicationsScreen extends StatefulWidget {
@@ -15,138 +18,251 @@ class ApplicationsScreen extends StatefulWidget {
   State<ApplicationsScreen> createState() => _ApplicationsScreenState();
 }
 
-class _ApplicationsScreenState extends State<ApplicationsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ApplicationsScreenState extends State<ApplicationsScreen> {
+  int _selectedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
     context.read<ApplicationBloc>().add(const FetchApplications());
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          // Solid Header Container
+          _buildHeader(context, topPadding),
+
+          // Body Content Area
+          Expanded(
+            child: BlocBuilder<ApplicationBloc, ApplicationState>(
+              builder: (context, state) {
+                if (state is ApplicationLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (state is ApplicationError) {
+                  final isNotFound =
+                      state.message.contains('404') ||
+                      state.message.toLowerCase().contains('not found') ||
+                      state.message.toLowerCase().contains('no applications');
+
+                  if (!isNotFound) {
+                    return _buildErrorState(context);
+                  }
+                }
+
+                List<Application> apps = [];
+                if (state is ApplicationListLoaded) {
+                  apps = state.applications;
+                }
+
+                return _buildApplicationsContent(context, apps, bottomInset);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Applications'),
-        // backgroundColor: AppColors.primary,
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          padding: EdgeInsets.zero,
-          indicatorColor: AppColors.primary,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: Colors.grey[600],
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Drafts'),
-            Tab(text: 'Under Review'),
-            Tab(text: 'Completed'),
-            Tab(text: 'Certified'),
-          ],
+  Widget _buildHeader(BuildContext context, double topPadding) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(0, topPadding + 28, 0, 22),
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(32),
         ),
       ),
-      body: BlocBuilder<ApplicationBloc, ApplicationState>(
-        builder: (context, state) {
-          if (state is ApplicationLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state is ApplicationError) {
-            final isNotFound =
-                state.message.contains('404') ||
-                state.message.toLowerCase().contains('not found') ||
-                state.message.toLowerCase().contains('no applications');
-
-            if (!isNotFound) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.cloud_off_outlined,
-                        size: 56,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Unable to Load Applications',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Please check your connection and tap retry to refresh.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          context.read<ApplicationBloc>().add(
-                            const FetchApplications(),
-                          );
-                        },
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
-                      ),
-                    ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Top Row: Screen Title "Applications" & Notification Bell
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Applications',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: -0.52,
                   ),
                 ),
-              );
-            }
-          }
+                Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: () => NotificationsBottomSheet.show(context),
+                    customBorder: const CircleBorder(),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.16),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          // Unread Notification Dot
+                          Positioned(
+                            top: 10,
+                            right: 11,
+                            child: Container(
+                              width: 9,
+                              height: 9,
+                              decoration: BoxDecoration(
+                                color: AppColors.secondary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.primary,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
 
-          List<Application> apps = [];
-          if (state is ApplicationListLoaded) {
-            apps = state.applications;
-          }
-
-          return TabBarView(
-            clipBehavior: Clip.none,
-            controller: _tabController,
-            children: [
-              _buildApplicationsList(apps, null),
-              _buildApplicationsList(apps, 'DRAFT'),
-              _buildApplicationsList(apps, 'UNDER_REVIEW'),
-              _buildApplicationsList(apps, 'COMPLETED'),
-              _buildApplicationsList(apps, 'CERTIFIED'),
-            ],
-          );
-        },
+          // Filter Tabs Row: All, Drafts, Under review, Completed
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                Expanded(child: _buildFilterChip(0, 'All')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildFilterChip(1, 'Drafts')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildFilterChip(2, 'Under review')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildFilterChip(3, 'Completed')),
+              ],
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 85),
-        child: FloatingActionButton.extended(
-          backgroundColor: AppColors.primary,
-          elevation: 6,
-          onPressed: () => _showCreateApplicationDialog(context),
-          icon: const Icon(Icons.add, color: Colors.white),
-          label: const Text(
-            'New Application',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    );
+  }
+
+  Widget _buildFilterChip(int index, String label) {
+    final isSelected = _selectedTabIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTabIndex = index;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.white.withOpacity(0.16),
+          borderRadius: BorderRadius.circular(19),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? AppColors.primary : Colors.white,
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildApplicationsList(
+  Widget _buildErrorState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.cloud_off_outlined,
+              size: 56,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Unable to Load Applications',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Please check your connection and tap retry to refresh.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              onPressed: () {
+                context.read<ApplicationBloc>().add(
+                      const FetchApplications(),
+                    );
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildApplicationsContent(
+    BuildContext context,
     List<Application> allApps,
-    String? filterStatus,
+    double bottomInset,
   ) {
+    String? filterStatus;
+    if (_selectedTabIndex == 1) filterStatus = 'DRAFT';
+    if (_selectedTabIndex == 2) filterStatus = 'UNDER_REVIEW';
+    if (_selectedTabIndex == 3) filterStatus = 'COMPLETED';
+
     final filtered = filterStatus == null
         ? allApps
         : allApps.where((a) {
@@ -163,61 +279,20 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
           }).toList();
 
     if (filtered.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: () async {
-          context.read<ApplicationBloc>().add(const FetchApplications());
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(24, 60, 24, 100),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.assignment_outlined,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No applications found',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  filterStatus == null
-                      ? 'Start your official Ethiopian Startup Certification process below.'
-                      : 'No applications match filter "$filterStatus".',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () => _showCreateApplicationDialog(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text(
-                    'Start New Application',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
+      return Container(
+        alignment: Alignment.center,
+        padding: EdgeInsets.only(
+          left: 36,
+          right: 36,
+          bottom: 110 + bottomInset,
+        ),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            context.read<ApplicationBloc>().add(const FetchApplications());
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: _buildEmptyState(context),
           ),
         ),
       );
@@ -228,13 +303,53 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
         context.read<ApplicationBloc>().add(const FetchApplications());
       },
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 110 + bottomInset),
         itemCount: filtered.length,
         itemBuilder: (context, index) {
           final app = filtered[index];
           return _buildApplicationCard(context, app);
         },
       ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const LineIllustration(),
+        const SizedBox(height: 28),
+        Text(
+          'No applications found',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          constraints: const BoxConstraints(maxWidth: 280),
+          child: Text(
+            'Start your official Ethiopian Startup Certification process below.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+              height: 1.6,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 32),
+        PressableCreateButton(
+          label: 'Start new application',
+          onPressed: () => _showCreateApplicationDialog(context),
+        ),
+      ],
     );
   }
 
@@ -290,12 +405,12 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200, width: 1.2),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        boxShadow: const [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity( 0.04),
+            color: Color(0x0C08737C),
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -330,20 +445,13 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primary.withOpacity( 0.8),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
                         child: Text(
                           initial,
-                          style: const TextStyle(
+                          style: GoogleFonts.plusJakartaSans(
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -358,10 +466,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                         children: [
                           Text(
                             startupName,
-                            style: const TextStyle(
+                            style: GoogleFonts.plusJakartaSans(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -369,9 +477,9 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                           const SizedBox(height: 2),
                           Text(
                             'Filed on $formattedDate',
-                            style: TextStyle(
+                            style: GoogleFonts.plusJakartaSans(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -383,16 +491,16 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity( 0.12),
+                        color: statusColor.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: statusColor.withOpacity( 0.3),
+                          color: statusColor.withOpacity(0.3),
                           width: 1,
                         ),
                       ),
                       child: Text(
                         app.status.toUpperCase(),
-                        style: TextStyle(
+                        style: GoogleFonts.plusJakartaSans(
                           color: statusColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 11.5,
@@ -416,29 +524,29 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                         children: [
                           Text(
                             'FOCUS',
-                            style: TextStyle(
+                            style: GoogleFonts.plusJakartaSans(
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade500,
+                              color: AppColors.textSecondary,
                               letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.category_outlined,
                                 size: 14,
-                                color: Colors.grey.shade700,
+                                color: AppColors.primary,
                               ),
                               const SizedBox(width: 5),
                               Expanded(
                                 child: Text(
                                   industry,
-                                  style: const TextStyle(
+                                  style: GoogleFonts.plusJakartaSans(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF334155),
+                                    color: AppColors.textPrimary,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -455,29 +563,29 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                         children: [
                           Text(
                             'CATEGORY',
-                            style: TextStyle(
+                            style: GoogleFonts.plusJakartaSans(
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade500,
+                              color: AppColors.textSecondary,
                               letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.stars_outlined,
                                 size: 14,
-                                color: Colors.grey.shade700,
+                                color: AppColors.primary,
                               ),
                               const SizedBox(width: 5),
                               Expanded(
                                 child: Text(
                                   category,
-                                  style: const TextStyle(
+                                  style: GoogleFonts.plusJakartaSans(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF334155),
+                                    color: AppColors.textPrimary,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -523,10 +631,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                       side: isDraft
                           ? BorderSide.none
                           : BorderSide(
-                              color: AppColors.primary.withOpacity( 0.3),
+                              color: AppColors.primary.withOpacity(0.3),
                             ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(19),
                       ),
                     ),
                     icon: Icon(
@@ -537,7 +645,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                     ),
                     label: Text(
                       isDraft ? 'Continue Application' : 'View Details',
-                      style: const TextStyle(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
@@ -594,9 +702,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                   Expanded(
                     child: Text(
                       name,
-                      style: const TextStyle(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -606,12 +715,12 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity( 0.15),
+                      color: statusColor.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       app.status.toUpperCase(),
-                      style: TextStyle(
+                      style: GoogleFonts.plusJakartaSans(
                         color: statusColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 11,
@@ -623,7 +732,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
               const SizedBox(height: 12),
               Text(
                 '$industry • $stage',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
               ),
               const Divider(height: 24),
               _detailRow('Application ID', app.id),
@@ -652,10 +764,20 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -665,18 +787,19 @@ class _ApplicationsScreenState extends State<ApplicationsScreen>
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'DRAFT':
-        return Colors.blueGrey;
+        return AppColors.textSecondary;
       case 'CERTIFIED':
       case 'APPROVED':
-        return Colors.green;
+      case 'COMPLETED':
+        return AppColors.primary;
       case 'UNDER_REVIEW':
       case 'PENDING':
       case 'SUBMITTED':
-        return Colors.orange;
+        return AppColors.secondary;
       case 'REJECTED':
-        return Colors.red;
+        return const Color(0xFFE53E3E);
       default:
-        return Colors.blue;
+        return AppColors.primary;
     }
   }
 
