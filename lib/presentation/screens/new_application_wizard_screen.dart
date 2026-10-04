@@ -1,13 +1,58 @@
+import 'dart:ui';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:startupet/features/application/bloc/application_state.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/app_colors.dart';
 import '../../features/application/bloc/application_bloc.dart';
 import '../../features/application/bloc/application_event.dart';
+import '../../features/application/bloc/application_state.dart';
 import '../../models/application.dart';
+
+/// Dashed border painter for file upload container
+class DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double gap;
+
+  DashedBorderPainter({
+    this.color = const Color(0x7308737C),
+    this.strokeWidth = 1.0,
+    this.gap = 4.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final RRect rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      const Radius.circular(14),
+    );
+
+    final Path path = Path()..addRRect(rrect);
+    final PathMetrics metrics = path.computeMetrics();
+
+    for (final PathMetric metric in metrics) {
+      double distance = 0.0;
+      while (distance < metric.length) {
+        const double length = 6.0;
+        final Path extractPath =
+            metric.extractPath(distance, distance + length);
+        canvas.drawPath(extractPath, paint);
+        distance += length + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 
 class NewApplicationWizardScreen extends StatefulWidget {
   final Application? existingApplication;
@@ -23,6 +68,15 @@ class _NewApplicationWizardScreenState
     extends State<NewApplicationWizardScreen> {
   int _currentStep = 1;
   bool _isSubmitting = false;
+
+  final List<String> _stepTitles = [
+    'Business info',
+    'Founders',
+    'Details',
+    'Financials',
+    'Documents',
+    'Review',
+  ];
 
   @override
   void initState() {
@@ -203,8 +257,8 @@ class _NewApplicationWizardScreenState
       final XFile? file = await openFile(
         acceptedTypeGroups:
             allowedExtensions != null && allowedExtensions.isNotEmpty
-            ? [typeGroup]
-            : const [],
+                ? [typeGroup]
+                : const [],
       );
 
       if (file != null) {
@@ -248,8 +302,8 @@ class _NewApplicationWizardScreenState
       'status': status,
       'startupName': _startupNameController.text.trim().isEmpty
           ? (status == 'DRAFT'
-                ? 'Draft Startup Application'
-                : 'My Ethiopian Startup')
+              ? 'Draft Startup Application'
+              : 'My Ethiopian Startup')
           : _startupNameController.text.trim(),
       'industry': _selectedIndustry ?? 'Agriculture & AgriTech',
       'stage': _mapStageToBackend(_selectedStage),
@@ -262,16 +316,12 @@ class _NewApplicationWizardScreenState
       }
     }
 
-    // Backend fields + legacy client fallbacks
     addIfNotEmpty('businessRegNumber', _registrationNumberController.text);
     addIfNotEmpty('registrationNumber', _registrationNumberController.text);
-
     addIfNotEmpty('tinNumber', _tinController.text);
     addIfNotEmpty('tin', _tinController.text);
-
     addIfNotEmpty('numberOfEmployees', _employeesController.text);
     addIfNotEmpty('employees', _employeesController.text);
-
     addIfNotEmpty('capital', _capitalController.text);
 
     if (_foundingDate != null) {
@@ -279,15 +329,11 @@ class _NewApplicationWizardScreenState
     }
 
     addIfNotEmpty('website', _websiteController.text);
-
     addIfNotEmpty('businessEmail', _businessEmailController.text);
     addIfNotEmpty('email', _businessEmailController.text);
-
     addIfNotEmpty('phoneNumber', _phoneController.text);
     addIfNotEmpty('phone', _phoneController.text);
-
     addIfNotEmpty('founderName', _founderNameController.text);
-
     addIfNotEmpty('businessDescription', _descriptionController.text);
     addIfNotEmpty('description', _descriptionController.text);
 
@@ -296,8 +342,9 @@ class _NewApplicationWizardScreenState
     if (_regCertDocName != null) payload['regCertDoc'] = _regCertDocName;
     if (_regCertDocPath != null) payload['regCertDocPath'] = _regCertDocPath;
     if (_pitchDeckDocName != null) payload['pitchDeckDoc'] = _pitchDeckDocName;
-    if (_pitchDeckDocPath != null)
+    if (_pitchDeckDocPath != null) {
       payload['pitchDeckDocPath'] = _pitchDeckDocPath;
+    }
 
     return payload;
   }
@@ -319,7 +366,7 @@ class _NewApplicationWizardScreenState
 
   void _submitApplication() {
     if (!_declarationConfirmed) {
-      final snackBar = SnackBar(
+      const snackBar = SnackBar(
         elevation: 0,
         behavior: SnackBarBehavior.floating,
         backgroundColor: Colors.transparent,
@@ -351,6 +398,9 @@ class _NewApplicationWizardScreenState
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return BlocListener<ApplicationBloc, ApplicationState>(
       listener: (context, state) {
         if (!_isSubmitting) return;
@@ -377,7 +427,7 @@ class _NewApplicationWizardScreenState
           setState(() {
             _isSubmitting = false;
           });
-          final snackBar = SnackBar(
+          const snackBar = SnackBar(
             elevation: 0,
             behavior: SnackBarBehavior.floating,
             backgroundColor: Colors.transparent,
@@ -393,238 +443,312 @@ class _NewApplicationWizardScreenState
           Navigator.pop(context);
         }
       },
-      child: Stack(
-        children: [
-          Scaffold(
-            backgroundColor: Colors.grey.shade50,
-            appBar: AppBar(
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'New Application',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    'Step $_currentStep of 6',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton.icon(
-                  onPressed: _isSubmitting ? null : _saveDraft,
-                  icon: const Icon(Icons.save_outlined, size: 18),
-                  label: const Text('Save Draft'),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-            body: Column(
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Stack(
+          children: [
+            Column(
               children: [
-                // Step Progress Bar Indicator
-                _buildStepProgressHeader(),
+                // Solid Header Container (Stays fixed)
+                _buildHeader(context, topPadding),
 
+                // Form Area (Scrolls)
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      28,
+                      24,
+                      130 + bottomInset,
+                    ),
                     child: _buildCurrentStepView(),
                   ),
                 ),
-
-                // Bottom Action Bar
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity( 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (_currentStep > 1)
-                        OutlinedButton(
-                          onPressed: _isSubmitting
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _currentStep--;
-                                  });
-                                },
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text('Back'),
-                        )
-                      else
-                        const SizedBox(),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 28,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: _isSubmitting
-                            ? null
-                            : () {
-                                if (_currentStep < 6) {
-                                  setState(() {
-                                    _currentStep++;
-                                  });
-                                } else {
-                                  _submitApplication();
-                                }
-                              },
-                        child: Text(
-                          _currentStep == 6
-                              ? 'Submit Application'
-                              : 'Save and Continue',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
-          ),
-          if (_isSubmitting)
-            Container(
-              color: Colors.black.withOpacity( 0.45),
-              child: Center(
-                child: Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(color: AppColors.primary),
-                        SizedBox(height: 18),
-                        Text(
-                          'Submitting Application...',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
+
+            // Floating Glass Footer (Pinned to bottom)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildFloatingFooter(context, bottomInset),
+            ),
+
+            // Loading overlay during submission
+            if (_isSubmitting)
+              Container(
+                color: Colors.black.withOpacity(0.45),
+                child: Center(
+                  child: Card(
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 24,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(
+                            color: AppColors.primary,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 18),
+                          Text(
+                            'Submitting Application...',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, double topPadding) {
+    final currentStepTitle = _stepTitles[_currentStep - 1];
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(24, topPadding + 24, 24, 24),
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(32),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Top Row: Back Button, Title Block, Save Draft Button
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Back Button
+              Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: () {
+                    if (_currentStep > 1) {
+                      setState(() {
+                        _currentStep--;
+                      });
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.16),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // Title Block
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'New application',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: -0.44,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Step $_currentStep of 6 · $currentStepTitle',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withOpacity(0.80),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Save Draft Button
+              Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+                child: InkWell(
+                  onTap: _isSubmitting ? null : _saveDraft,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.16),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Save draft',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+
+          // Progress Bar: 6 equal-width segments
+          Semantics(
+            label: 'Step $_currentStep of 6',
+            child: Row(
+              children: List.generate(6, (index) {
+                final stepNum = index + 1;
+                Color segmentColor;
+                if (stepNum < _currentStep) {
+                  segmentColor = Colors.white;
+                } else if (stepNum == _currentStep) {
+                  segmentColor = AppColors.secondary;
+                } else {
+                  segmentColor = Colors.white.withOpacity(0.25);
+                }
+
+                return Expanded(
+                  child: Container(
+                    height: 4,
+                    margin: EdgeInsets.only(right: index < 5 ? 6 : 0),
+                    decoration: BoxDecoration(
+                      color: segmentColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                );
+              }),
             ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStepProgressHeader() {
-    final stepTitles = [
-      'Business Info',
-      'Founders',
-      'Details',
-      'Financials',
-      'Documents',
-      'Review',
-    ];
-
+  Widget _buildFloatingFooter(BuildContext context, double bottomInset) {
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: List.generate(6, (index) {
-            final stepNumber = index + 1;
-            final isActive = stepNumber == _currentStep;
-            final isCompleted = stepNumber < _currentStep;
-
-            return Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _currentStep = stepNumber;
-                    });
-                  },
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 14,
-                        backgroundColor: isActive
-                            ? AppColors.primary
-                            : isCompleted
-                            ? Colors.teal
-                            : Colors.grey.shade300,
-                        child: isCompleted
-                            ? const Icon(
-                                Icons.check,
-                                size: 14,
-                                color: Colors.white,
-                              )
-                            : Text(
-                                '$stepNumber',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isActive || isCompleted
-                                      ? Colors.white
-                                      : Colors.grey.shade700,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        stepTitles[index],
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isActive
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: isActive
-                              ? AppColors.primary
-                              : Colors.grey.shade700,
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20, 14, 20, 14 + bottomInset),
+      decoration: const BoxDecoration(
+        color: Color(0x99FFFFFF),
+        border: Border(
+          top: BorderSide(
+            color: Color(0xCCFFFFFF),
+            width: 1,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x2E08737C),
+            blurRadius: 32,
+            offset: Offset(0, -8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          child: Row(
+            children: [
+              if (_currentStep > 1) ...[
+                // Secondary Back Button
+                Expanded(
+                  flex: 1,
+                  child: SizedBox(
+                    height: 54,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(
+                          color: Color(0x4D08737C),
+                          width: 1,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(27),
                         ),
                       ),
-                    ],
+                      onPressed: _isSubmitting
+                          ? null
+                          : () {
+                              setState(() {
+                                _currentStep--;
+                              });
+                            },
+                      child: Text(
+                        'Back',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                if (index < 5)
-                  Container(
-                    width: 24,
-                    height: 2,
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    color: isCompleted ? Colors.teal : Colors.grey.shade300,
-                  ),
+                const SizedBox(width: 12),
               ],
-            );
-          }),
+
+              // Main Save & Continue / Submit Button
+              Expanded(
+                flex: 2,
+                child: PressableWizardButton(
+                  label: _currentStep == 6
+                      ? 'Submit application'
+                      : 'Save and continue',
+                  onPressed: _isSubmitting
+                      ? () {}
+                      : () {
+                          if (_currentStep < 6) {
+                            setState(() {
+                              _currentStep++;
+                            });
+                          } else {
+                            _submitApplication();
+                          }
+                        },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -654,35 +778,41 @@ class _NewApplicationWizardScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Business Profile',
-          style: TextStyle(
-            fontSize: 20,
+        Text(
+          'Business profile',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.textPrimary,
+            letterSpacing: -0.48,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
           'Provide core legal and organizational details of your startup.',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            height: 1.6,
+            color: AppColors.textSecondary,
+          ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 26),
 
-        _buildLabel('Startup Name *'),
+        _buildLabel('Startup name', isRequired: true),
         TextField(
           controller: _startupNameController,
           decoration: _inputDecoration('Your business name'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLabel('Business Registration No.'),
+                  _buildLabel('Business registration no.'),
                   TextField(
                     controller: _registrationNumberController,
                     decoration: _inputDecoration('e.g., BRN123456'),
@@ -690,30 +820,31 @@ class _NewApplicationWizardScreenState
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLabel('TIN Number'),
+                  _buildLabel('TIN number'),
                   TextField(
                     controller: _tinController,
-                    decoration: _inputDecoration('Tax ID Number'),
+                    decoration: _inputDecoration('Tax ID number'),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLabel('Number of Employees *'),
+                  _buildLabel('Number of employees', isRequired: true),
                   TextField(
                     controller: _employeesController,
                     keyboardType: TextInputType.number,
@@ -722,7 +853,7 @@ class _NewApplicationWizardScreenState
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -738,9 +869,9 @@ class _NewApplicationWizardScreenState
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Founding Date'),
+        _buildLabel('Founding date'),
         InkWell(
           onTap: () async {
             final picked = await showDatePicker(
@@ -756,11 +887,12 @@ class _NewApplicationWizardScreenState
             }
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0x3808737C)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -769,73 +901,109 @@ class _NewApplicationWizardScreenState
                   _foundingDate != null
                       ? '${_foundingDate!.year}-${_foundingDate!.month.toString().padLeft(2, '0')}-${_foundingDate!.day.toString().padLeft(2, '0')}'
                       : 'ቀን ይምረጡ…',
-                  style: TextStyle(
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
                     color: _foundingDate != null
-                        ? Colors.black
-                        : Colors.grey[600],
+                        ? AppColors.textPrimary
+                        : const Color(0xFF93A8AB),
                   ),
                 ),
-                const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 22,
+                  color: AppColors.primary,
+                ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Industry *'),
+        _buildLabel('Industry', isRequired: true),
         DropdownButtonFormField<String>(
           value: _selectedIndustry,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 20,
+            color: AppColors.primary,
+          ),
           items: _industries
-              .map((ind) => DropdownMenuItem(value: ind, child: Text(ind)))
+              .map((ind) => DropdownMenuItem(
+                    value: ind,
+                    child: Text(
+                      ind,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ))
               .toList(),
           onChanged: (val) => setState(() => _selectedIndustry = val),
           decoration: _inputDecoration('Select industry'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Business Stage *'),
+        _buildLabel('Business stage', isRequired: true),
         DropdownButtonFormField<String>(
           value: _selectedStage,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 20,
+            color: AppColors.primary,
+          ),
           items: _stages
-              .map((stg) => DropdownMenuItem(value: stg, child: Text(stg)))
+              .map((stg) => DropdownMenuItem(
+                    value: stg,
+                    child: Text(
+                      stg,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ))
               .toList(),
           onChanged: (val) => setState(() => _selectedStage = val),
           decoration: _inputDecoration('Select lifecycle stage'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         _buildLabel('Website'),
         TextField(
           controller: _websiteController,
           decoration: _inputDecoration('https://www.example.com'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Business Email *'),
+        _buildLabel('Business email', isRequired: true),
         TextField(
           controller: _businessEmailController,
           keyboardType: TextInputType.emailAddress,
           decoration: _inputDecoration('business@example.com'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Alternative Email'),
+        _buildLabel('Alternative email'),
         TextField(
           controller: _altEmailController,
           keyboardType: TextInputType.emailAddress,
           decoration: _inputDecoration('alternative@example.com'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Phone Number *'),
+        _buildLabel('Phone number', isRequired: true),
         TextField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
           decoration: _inputDecoration('+251 91 234 5678'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Articles of Incorporation *'),
+        _buildLabel('Articles of incorporation', isRequired: true),
         _buildFileUploadTile(
           fileName: _articlesDocName,
           hint: 'Max 20MB (PDF, DOCX, PNG, JPG)',
@@ -866,43 +1034,48 @@ class _NewApplicationWizardScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Founders & Leadership',
-          style: TextStyle(
-            fontSize: 20,
+        Text(
+          'Founders & leadership',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.textPrimary,
+            letterSpacing: -0.48,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
           'Add founder profile and equity distribution details.',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            height: 1.6,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 26),
+
+        _buildLabel('Founder full name', isRequired: true),
+        TextField(
+          controller: _founderNameController,
+          decoration: _inputDecoration('e.g., Abebe Feleke'),
         ),
         const SizedBox(height: 20),
 
-        _buildLabel('Founder Full Name *'),
-        TextField(
-          controller: _founderNameController,
-          decoration: _inputDecoration('e.g., Leul Eyasu'),
-        ),
-        const SizedBox(height: 16),
-
-        _buildLabel('Role / Position *'),
+        _buildLabel('Role / position', isRequired: true),
         TextField(
           controller: _founderRoleController,
           decoration: _inputDecoration('e.g., Chief Executive Officer (CEO)'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Fayda National ID (FCN) *'),
+        _buildLabel('Fayda National ID (FCN)', isRequired: true),
         TextField(
           controller: _founderFaydaController,
           decoration: _inputDecoration('16-digit FCN number'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Equity Ownership (%) *'),
+        _buildLabel('Equity ownership (%)', isRequired: true),
         TextField(
           controller: _founderEquityController,
           keyboardType: TextInputType.number,
@@ -917,22 +1090,27 @@ class _NewApplicationWizardScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Product & Innovation Details',
-          style: TextStyle(
-            fontSize: 20,
+        Text(
+          'Product & innovation details',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.textPrimary,
+            letterSpacing: -0.48,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
           'Describe your technology solution and value proposition.',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            height: 1.6,
+            color: AppColors.textSecondary,
+          ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 26),
 
-        _buildLabel('Product / Service Summary *'),
+        _buildLabel('Product / service summary', isRequired: true),
         TextField(
           controller: _descriptionController,
           maxLines: 3,
@@ -940,9 +1118,9 @@ class _NewApplicationWizardScreenState
             'Briefly outline your product or software platform',
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Problem & Solution *'),
+        _buildLabel('Problem & solution', isRequired: true),
         TextField(
           controller: _problemSolutionController,
           maxLines: 4,
@@ -959,30 +1137,35 @@ class _NewApplicationWizardScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Financial Overview',
-          style: TextStyle(
-            fontSize: 20,
+        Text(
+          'Financial overview',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.textPrimary,
+            letterSpacing: -0.48,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
           'Provide financial capital, revenue, and funding info.',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            height: 1.6,
+            color: AppColors.textSecondary,
+          ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 26),
 
-        _buildLabel('Annual Revenue (ETB)'),
+        _buildLabel('Annual revenue (ETB)'),
         TextField(
           controller: _revenueController,
           keyboardType: TextInputType.number,
           decoration: _inputDecoration('e.g., 500,000 ETB'),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Total Raised Funding (ETB)'),
+        _buildLabel('Total raised funding (ETB)'),
         TextField(
           controller: _fundingController,
           keyboardType: TextInputType.number,
@@ -997,22 +1180,27 @@ class _NewApplicationWizardScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Required Verification Documents',
-          style: TextStyle(
-            fontSize: 20,
+        Text(
+          'Required verification documents',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.textPrimary,
+            letterSpacing: -0.48,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
           'Upload official certificates for verification (Max 20MB per document).',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            height: 1.6,
+            color: AppColors.textSecondary,
+          ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 26),
 
-        _buildLabel('Business Registration Certificate *'),
+        _buildLabel('Business registration certificate', isRequired: true),
         _buildFileUploadTile(
           fileName: _regCertDocName,
           hint: 'Commercial registration certificate (PDF, DOCX, PNG, JPG)',
@@ -1034,9 +1222,9 @@ class _NewApplicationWizardScreenState
             });
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        _buildLabel('Startup Pitch Deck (PDF) *'),
+        _buildLabel('Startup pitch deck (PDF)', isRequired: true),
         _buildFileUploadTile(
           fileName: _pitchDeckDocName,
           hint: 'Executive pitch deck slides (PDF, PPTX)',
@@ -1067,69 +1255,76 @@ class _NewApplicationWizardScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Review & Submission',
-          style: TextStyle(
-            fontSize: 20,
+        Text(
+          'Review & submission',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: AppColors.textPrimary,
+            letterSpacing: -0.48,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
           'Verify all details before submitting for official Ethiopian startup label certification.',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-        ),
-        const SizedBox(height: 20),
-
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade300),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            height: 1.6,
+            color: AppColors.textSecondary,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _reviewRow(
-                  'Startup Name',
-                  _startupNameController.text.isEmpty
-                      ? 'My Startup'
-                      : _startupNameController.text,
-                ),
-                _reviewRow('Industry', _selectedIndustry ?? 'Technology'),
-                _reviewRow('Stage', _selectedStage ?? 'Early Stage'),
-                _reviewRow(
-                  'Employees',
-                  _employeesController.text.isEmpty
-                      ? '10'
-                      : _employeesController.text,
-                ),
-                _reviewRow(
-                  'Email',
-                  _businessEmailController.text.isEmpty
-                      ? 'business@example.com'
-                      : _businessEmailController.text,
-                ),
-                _reviewRow(
-                  'Phone',
-                  _phoneController.text.isEmpty
-                      ? '+251 91 234 5678'
-                      : _phoneController.text,
-                ),
-                const Divider(height: 20),
-                _reviewRow(
-                  'Articles of Inc.',
-                  _articlesDocName ?? 'Not uploaded',
-                ),
-                _reviewRow(
-                  'Registration Cert.',
-                  _regCertDocName ?? 'Not uploaded',
-                ),
-                _reviewRow('Pitch Deck', _pitchDeckDocName ?? 'Not uploaded'),
-              ],
-            ),
+        ),
+        const SizedBox(height: 26),
+
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              _reviewRow(
+                'Startup Name',
+                _startupNameController.text.isEmpty
+                    ? 'My Startup'
+                    : _startupNameController.text,
+              ),
+              _reviewRow('Industry', _selectedIndustry ?? 'Technology'),
+              _reviewRow('Stage', _selectedStage ?? 'Early Stage'),
+              _reviewRow(
+                'Employees',
+                _employeesController.text.isEmpty
+                    ? '10'
+                    : _employeesController.text,
+              ),
+              _reviewRow(
+                'Email',
+                _businessEmailController.text.isEmpty
+                    ? 'business@example.com'
+                    : _businessEmailController.text,
+              ),
+              _reviewRow(
+                'Phone',
+                _phoneController.text.isEmpty
+                    ? '+251 91 234 5678'
+                    : _phoneController.text,
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                height: 1,
+                color: const Color(0x1F08737C),
+              ),
+              _reviewRow(
+                'Articles of Inc.',
+                _articlesDocName ?? 'Not uploaded',
+              ),
+              _reviewRow(
+                'Registration Cert.',
+                _regCertDocName ?? 'Not uploaded',
+              ),
+              _reviewRow('Pitch Deck', _pitchDeckDocName ?? 'Not uploaded'),
+            ],
           ),
         ),
         const SizedBox(height: 20),
@@ -1140,9 +1335,12 @@ class _NewApplicationWizardScreenState
               setState(() => _declarationConfirmed = val ?? false),
           activeColor: AppColors.primary,
           contentPadding: EdgeInsets.zero,
-          title: const Text(
+          title: Text(
             'I hereby declare that all provided business info is accurate under penalty of Ethiopian startup proclamation guidelines.',
-            style: TextStyle(fontSize: 12),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12.5,
+              color: AppColors.textSecondary,
+            ),
           ),
         ),
       ],
@@ -1155,13 +1353,21 @@ class _NewApplicationWizardScreenState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
           Text(
             value,
-            style: TextStyle(
+            style: GoogleFonts.plusJakartaSans(
               fontWeight: FontWeight.bold,
               fontSize: 13,
-              color: value == 'Not uploaded' ? Colors.red.shade400 : null,
+              color: value == 'Not uploaded'
+                  ? const Color(0xFFD14343)
+                  : AppColors.textPrimary,
             ),
           ),
         ],
@@ -1169,15 +1375,27 @@ class _NewApplicationWizardScreenState
     );
   }
 
-  Widget _buildLabel(String labelText) {
+  Widget _buildLabel(String labelText, {bool isRequired = false}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        labelText,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 13,
-          color: Color(0xFF1E293B),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: RichText(
+        text: TextSpan(
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+          children: [
+            TextSpan(text: labelText),
+            if (isRequired)
+              TextSpan(
+                text: ' *',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.secondary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -1186,20 +1404,24 @@ class _NewApplicationWizardScreenState
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+      hintStyle: GoogleFonts.plusJakartaSans(
+        color: const Color(0xFF93A8AB),
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      ),
       filled: true,
       fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0x3808737C)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0x3808737C)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
     );
@@ -1213,75 +1435,142 @@ class _NewApplicationWizardScreenState
   }) {
     final hasFile = fileName != null && fileName.isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: hasFile
-            ? AppColors.primary.withOpacity( 0.04)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: hasFile
-              ? AppColors.primary.withOpacity( 0.5)
-              : Colors.grey.shade300,
-          width: hasFile ? 1.5 : 1.0,
-        ),
+    return CustomPaint(
+      painter: DashedBorderPainter(
+        color: hasFile ? AppColors.primary : const Color(0x7308737C),
+        strokeWidth: 1.2,
       ),
-      child: Row(
-        children: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: hasFile
-                  ? AppColors.primary
-                  : Colors.grey.shade200,
-              foregroundColor: hasFile ? Colors.white : Colors.black87,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: onPick,
-            icon: Icon(
-              hasFile ? Icons.file_present_rounded : Icons.upload_file_rounded,
-              size: 18,
-            ),
-            label: Text(hasFile ? 'Change File' : 'Choose File'),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  hasFile ? fileName : 'No file chosen',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: hasFile ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 13,
-                    color: hasFile ? AppColors.primary : Colors.grey.shade600,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Material(
+              color: const Color(0x1A08737C),
+              borderRadius: BorderRadius.circular(21),
+              child: InkWell(
+                onTap: onPick,
+                borderRadius: BorderRadius.circular(21),
+                child: Container(
+                  height: 42,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Center(
+                    child: Text(
+                      'Choose file',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  hint,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hasFile ? fileName : 'No file chosen',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    hint,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (hasFile && onClear != null)
+              IconButton(
+                icon: const Icon(
+                  Icons.cancel_outlined,
+                  size: 20,
+                  color: Color(0xFFD14343),
                 ),
-              ],
+                onPressed: onClear,
+                tooltip: 'Remove File',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated Pressable Wizard Button with 0.98 press scale animation
+class PressableWizardButton extends StatefulWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const PressableWizardButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  State<PressableWizardButton> createState() => _PressableWizardButtonState();
+}
+
+class _PressableWizardButtonState extends State<PressableWizardButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: _isPressed ? 0.98 : 1.0,
+      duration: const Duration(milliseconds: 100),
+      child: Container(
+        width: double.infinity,
+        height: 54,
+        decoration: BoxDecoration(
+          color: _isPressed ? AppColors.primaryDark : AppColors.primary,
+          borderRadius: BorderRadius.circular(27),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x7F08737C),
+              blurRadius: 22,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(27),
+          child: InkWell(
+            onTapDown: (_) => setState(() => _isPressed = true),
+            onTapUp: (_) => setState(() => _isPressed = false),
+            onTapCancel: () => setState(() => _isPressed = false),
+            onTap: widget.onPressed,
+            borderRadius: BorderRadius.circular(27),
+            child: Center(
+              child: Text(
+                widget.label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
-          if (hasFile && onClear != null)
-            IconButton(
-              icon: const Icon(
-                Icons.cancel_outlined,
-                size: 20,
-                color: Colors.redAccent,
-              ),
-              onPressed: onClear,
-              tooltip: 'Remove File',
-            ),
-        ],
+        ),
       ),
     );
   }
