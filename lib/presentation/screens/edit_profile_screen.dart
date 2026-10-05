@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/app_colors.dart';
 import '../../features/auth/bloc/auth_bloc.dart';
@@ -140,7 +144,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   textColor: AppColors.textPrimary,
                   onTap: () async {
                     Navigator.pop(sheetContext);
-                    await _pickImage();
+                    await _pickImage(ImageSource.camera);
                   },
                 ),
 
@@ -150,7 +154,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   textColor: AppColors.textPrimary,
                   onTap: () async {
                     Navigator.pop(sheetContext);
-                    await _pickImage();
+                    await _pickImage(ImageSource.gallery);
                   },
                 ),
 
@@ -159,12 +163,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   _buildBottomSheetOption(
                     label: 'Remove photo',
                     textColor: const Color(0xFFD14343),
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(sheetContext);
                       setState(() {
                         _isPhotoRemoved = true;
                         _previewPhotoPath = null;
                       });
+                      final userId = widget.user?.id ?? widget.user?.email ?? 'default_user';
+                      const storage = FlutterSecureStorage();
+                      await storage.delete(key: 'profile_photo_$userId');
+                      UserAvatar.notifyPhotoChanged();
                     },
                   ),
 
@@ -221,27 +229,92 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     try {
-      const XTypeGroup typeGroup = XTypeGroup(
-        label: 'images',
-        extensions: ['jpg', 'jpeg', 'png', 'webp'],
+      final ImagePicker picker = ImagePicker();
+      final XFile? pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
       );
-      final XFile? file = await openFile(
-        acceptedTypeGroups: const [typeGroup],
-      );
-      if (file != null) {
+
+      if (pickedFile != null) {
+        final Directory appDir = await getApplicationDocumentsDirectory();
+        final String fileName =
+            'profile_photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final String savedPath = '${appDir.path}/$fileName';
+        final File savedFile = await File(pickedFile.path).copy(savedPath);
+
         setState(() {
-          _previewPhotoPath = file.path;
+          _previewPhotoPath = savedFile.path;
           _isPhotoRemoved = false;
         });
+
+        // Store immediately to secure storage on phone
+        final userId = widget.user?.id ?? widget.user?.email ?? 'default_user';
+        const storage = FlutterSecureStorage();
+        await storage.write(key: 'profile_photo_$userId', value: savedFile.path);
+
+        // Instantly notify UserAvatar across all active app screens
+        UserAvatar.notifyPhotoChanged();
+
+        _showAwesomeSnackbar(
+          'Photo Updated',
+          'Profile picture updated successfully!',
+          ContentType.success,
+        );
+      }
+    } on PlatformException catch (e) {
+      if (e.code == 'camera_access_denied' ||
+          e.code == 'photo_access_denied' ||
+          e.code == 'permission_denied') {
+        _showAwesomeSnackbar(
+          'Permission Required',
+          'Please allow camera/photo access in device settings.',
+          ContentType.warning,
+        );
       }
     } catch (e) {
-      _showAwesomeSnackbar(
-        'Image Notice',
-        "Couldn't save the photo. Try again.",
-        ContentType.failure,
-      );
+      // Fallback for file selection on unsupported platforms/devices
+      try {
+        const XTypeGroup typeGroup = XTypeGroup(
+          label: 'images',
+          extensions: ['jpg', 'jpeg', 'png', 'webp'],
+        );
+        final XFile? file = await openFile(
+          acceptedTypeGroups: const [typeGroup],
+        );
+        if (file != null) {
+          final Directory appDir = await getApplicationDocumentsDirectory();
+          final String fileName =
+              'profile_photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final String savedPath = '${appDir.path}/$fileName';
+          final File savedFile = await File(file.path).copy(savedPath);
+
+          setState(() {
+            _previewPhotoPath = savedFile.path;
+            _isPhotoRemoved = false;
+          });
+
+          final userId = widget.user?.id ?? widget.user?.email ?? 'default_user';
+          const storage = FlutterSecureStorage();
+          await storage.write(key: 'profile_photo_$userId', value: savedFile.path);
+          UserAvatar.notifyPhotoChanged();
+
+          _showAwesomeSnackbar(
+            'Photo Updated',
+            'Profile picture updated successfully!',
+            ContentType.success,
+          );
+        }
+      } catch (_) {
+        _showAwesomeSnackbar(
+          'Notice',
+          "Couldn't update photo. Please try again.",
+          ContentType.failure,
+        );
+      }
     }
   }
 
@@ -285,6 +358,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final phone = _phoneController.text.trim();
     final address = _addressController.text.trim();
     final image = _imageUrlController.text.trim(); // Keep existing URL in save payload
+
+    if (!mounted) return;
 
     context.read<AuthBloc>().add(
           AuthUpdateProfileRequested(
@@ -399,6 +474,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             isPhotoRemoved: _isPhotoRemoved,
                             ringColor: AppColors.background, // #F3F8F8 6px ring
                             ringWidth: 6,
+                            onTap: _showPhotoOptionsBottomSheet,
                           ),
                           // Camera Button (36x36, #F7A03A, 3px ring in #F3F8F8)
                           Positioned(

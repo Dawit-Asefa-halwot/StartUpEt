@@ -6,8 +6,10 @@ import '../../core/app_colors.dart';
 import '../../features/application/bloc/application_bloc.dart';
 import '../../features/application/bloc/application_state.dart';
 import '../../models/user.dart';
+import '../screens/edit_profile_screen.dart';
 import 'metric_card.dart';
 import 'notifications_bottom_sheet.dart';
+import 'user_avatar.dart';
 
 /// Simple line illustration (84x84) representing an outlined document
 /// with an orange filled circle containing a white plus at the bottom-right.
@@ -177,18 +179,8 @@ class StartupDashboardView extends StatelessWidget {
     required this.onNavigateTab,
   });
 
-  String _getInitials(String? name) {
-    if (name == null || name.trim().isEmpty) return 'AF';
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.substring(0, name.length >= 2 ? 2 : 1).toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final initials = _getInitials(user.name);
     final userName = user.name ?? 'Abebe Feleke';
     final topPadding = MediaQuery.of(context).padding.top;
     final bottomInset = MediaQuery.of(context).padding.bottom;
@@ -214,24 +206,18 @@ class StartupDashboardView extends StatelessWidget {
                 // Left: Avatar and Text Stack
                 Row(
                   children: [
-                    // Avatar: 44x44 circle with initials
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.16),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          initials,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                    // Avatar: 56x56 circle avatar (radius: 28, increased size with photo & initials support)
+                    UserAvatar(
+                      user: user,
+                      radius: 28,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditProfileScreen(user: user),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                     const SizedBox(width: 14),
                     // Text Stack

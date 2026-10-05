@@ -71,9 +71,6 @@ class SettingsScreen extends StatelessWidget {
             final userName = user?.name ?? user?.email ?? 'Abebe Feleke';
             final email = user?.email ?? 'abebe@startupet.et';
             final role = user?.role ?? 'USER';
-            final initial = userName.trim().isNotEmpty
-                ? userName.trim()[0].toUpperCase()
-                : 'A';
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +138,19 @@ class SettingsScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             // 64x64 Circle Avatar
-                            UserAvatar(user: user, radius: 32),
+                            UserAvatar(
+                              user: user,
+                              radius: 32,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        EditProfileScreen(user: user),
+                                  ),
+                                );
+                              },
+                            ),
                             const SizedBox(width: 16),
                             // Text Stack
                             Expanded(
